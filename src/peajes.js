@@ -18,25 +18,6 @@ const scrapePeajes = async () => {
   // 3. Esperar elementos específicos
   await page.waitForSelector('table');
 
-  //   // 4. Extraer los datos
-  //   const peajes = await page.evaluate(() => {
-  //     // Seleccionar todas las filas de la tabla
-  //     const rows = Array.from(document.querySelectorAll('table tr'));
-
-  //     // Convertir las filas a objetos con la información relevante
-  //     return rows
-  //       .map((row) => {
-  //         const columns = row.querySelectorAll('td');
-  //         console.log("🐳 ~ .map ~ columns:", columns)
-  //         return {
-  //           nombre: columns[0]?.textContent?.trim() || null,
-  //           categoria: columns[1]?.textContent?.trim() || null,
-  //           tarifa: columns[2]?.textContent?.trim() || null,
-  //         };
-  //       })
-  //       .filter((item) => item.nombre); // Filtra filas vacías o encabezados
-  //   });
-
   // 4. Extraer datos de la tabla
   const peajes = await page.evaluate(() => {
     // Seleccionar la tabla
@@ -69,4 +50,3 @@ const scrapePeajes = async () => {
 };
 
 export default scrapePeajes;
-//
