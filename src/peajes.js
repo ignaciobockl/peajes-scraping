@@ -10,40 +10,59 @@ const scrapePeajes = async () => {
   const page = await browser.newPage();
 
   // 2. Navegar al sitio web
-  //    TODO: usar env para la pagina
   const url =
     'https://www.argentina.gob.ar/transporte/vialidad-nacional/institucional/informacion-publica/tarifas-de-peajes';
   await page.goto(url, { waitUntil: 'domcontentloaded' }); // Espera a que el DOM esté cargado
 
-  // 3. Esperar elementos específicos
-  await page.waitForSelector('table');
+  let peajes = [];
+  let hasNextPage = true;
 
-  // 4. Extraer datos de la tabla
-  const peajes = await page.evaluate(() => {
-    // Seleccionar la tabla
-    const table = document.querySelector('table');
-    if (!table) return [];
+  while (hasNextPage) {
+    // 3. Esperar hasta que la tabla esté cargada
+    await page.waitForSelector('table');
 
-    // Obtener los encabezados
-    const headers = Array.from(table.querySelectorAll('thead tr th')).map(
-      (th) => th.textContent?.trim()
-    );
+    // 4. Extraer datos de la tabla actual
+    const currentPageData = await page.evaluate(() => {
+      const table = document.querySelector('table');
+      if (!table) return [];
 
-    // Obtener las filas de datos
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
+      // Obtener encabezados
+      const headers = Array.from(table.querySelectorAll('thead tr th')).map(
+        (th) => th.textContent?.trim()
+      );
 
-    // Mapear las filas a objetos con claves de los encabezados
-    return rows.map((row) => {
-      const cells = Array.from(row.querySelectorAll('td'));
-      const rowData = {};
-      headers.forEach((header, index) => {
-        rowData[header] = cells[index]?.textContent?.trim() || null;
+      // Obtener filas de datos
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      return rows.map((row) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const rowData = {};
+        headers.forEach((header, index) => {
+          rowData[header] = cells[index]?.textContent?.trim() || null;
+        });
+        return rowData;
       });
-      return rowData;
     });
-  });
 
-  // 5. Cerrar el navegador
+    // Agregar los datos de la página actual al array principal
+    peajes = peajes.concat(currentPageData);
+
+    // 5. Verificar si hay una siguiente página y navegar
+    hasNextPage = await page.evaluate(() => {
+      const nextButton = document.querySelector('.pagination .next');
+      if (nextButton && !nextButton.classList.contains('disabled')) {
+        nextButton.click();
+        return true;
+      }
+      return false;
+    });
+
+    // Esperar un momento para que la nueva página cargue
+    if (hasNextPage) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  // 6. Cerrar el navegador
   await browser.close();
 
   return peajes;
